@@ -1,41 +1,38 @@
-# -*- coding: utf-8 -*-
-# VocabList.py
-# Author: Riley Rettig
-# Date created: Jan 28 2017
-# Date last edited: Jan 28 2017
+"""VocabList.py
+Creates a VocabList object by asking the user for terms and definitions.
+
+Author: Riley Rettig
+Date created: Jan 28 2017
+Date last edited: April 30 2017
+"""
+
 
 class VocabList:
-    
-    #need attribute references for terms and definitions
     def __init__(self):
+
         self.terms = []
         print("Terms?:\n (Enter empty when finished)")
         while True:
             term = input()
-            if term!="":
+            if term != "":
                 self.terms.append(term)
             else:
                 break
 
-        self.defs = []
+        self.definitions = []
         print("Definitions?:\n (Enter empty when finished)")
         while True:
-            defin = input()
-            if defin != "":
-                self.defs.append(defin)
+            definition = input()
+            if definition != "":
+                self.definitions.append(definition)
             else:
                 break
 
-        
-    
-        
+
 def main():
-    #terms = ["a", "b", "c"]
-    #defs = ["d", "e", "f"]
     vocab = VocabList()
-    print ("Terms: " + str(vocab.terms))
-    print ("Definitions: " + str(vocab.defs))
+    print("Terms: " + str(vocab.terms))
+    print("Definitions: " + str(vocab.definitions))
     
 if __name__ == '__main__':
     main()
-    
