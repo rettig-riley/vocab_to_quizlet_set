@@ -1,131 +1,112 @@
-# Purpose: Use the Quizlet API to return info about card sets, based on the
-# user request.
-# Authors: Riley Rettig
-# Date: January 17, 2018
+"""quizlet.py
+Purpose: Use the Quizlet API to create a new card deck from User's input.
 
-import requests
-import json
-import jinja2, webbrowser, os
-import codecs
-from requests.auth import HTTPBasicAuth
+Authors: Riley Rettig
+Date created: January 17, 2018
+Date last edited: April 30 2017
+"""
+
+import os
 from sys import exit
+import json
+import webbrowser
+import codecs
+
+import jinja2
+import requests
+from requests.auth import HTTPBasicAuth
+
 from VocabList import *
 
-def askAuth():
-    baseURL = "https://quizlet.com/authorize"
+BASE_URL_AUTH = "https://quizlet.com/authorize"
+BASE_URL_TOKEN = "https://api.quizlet.com/oauth/token"
+CLIENT_ID = "sNtZu7YJaJ"
+REDIRECT_URI = "https://rileyrettig.wordpress.com/"
+SECRET_KEY = "2Y8pMwHKvuBAAUtzdFWRNS"
+TERM_LANGUAGE = "en"
+DEF_LANGUAGE = "en"
+
+
+def ask_auth():
     params = {
-    "scope":"write_set",
-    "client_id":"sNtZu7YJaJ",
-    "response_type":"code",
-    "state":"RANDOM_STRING"
-    }
-    URL = requests.get(baseURL, params=params).url
-    #Open URL page to ask for permission
-    webbrowser.open(URL)
+        "scope": "write_set",
+        "client_id": CLIENT_ID,
+        "response_type": "code",
+        "state": "RANDOM_STRING"
+        }
+    url = requests.get(BASE_URL_AUTH, params=params).url
+    # Open URL page to ask for permission
+    webbrowser.open(url)
 
 
-def getAuth(redirectedURL):
-    splitURL = redirectedURL.split("code=")
-    
-    #if the authorization is denied the program will exit
-    if len(splitURL)!=2:
-        print ("Error: Access Denied")
+def get_auth(redirected_url):
+    split_url = redirected_url.split("code=")
+
+    # If the authorization is denied the program will exit
+    if len(split_url) != 2:
+        auth_code = none
+        print("Error: Access Denied")
         exit()
     else:
-        authCode = splitURL[1][:-1]
-    return authCode
+        auth_code = split_url[1][:-1]
+    return auth_code
 
 
-def requestToken(code):
-    baseURL = "https://api.quizlet.com/oauth/token"
+def get_token(code):
     params = {
-    "grant_type": "authorization_code",
-    "code" : code,
-    "redirect_uri":"https://rileyrettig.wordpress.com/",
-    }
-    r = requests.post(baseURL, auth=HTTPBasicAuth('sNtZu7YJaJ', '2Y8pMwHKvuBAAUtzdFWRNS'), params=params)
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": REDIRECT_URI,
+        }
+    r = requests.post(
+        BASE_URL_TOKEN,
+        auth=HTTPBasicAuth(CLIENT_ID, SECRET_KEY),
+        params=params
+        )
     # Convert given JSON string to a dictionary
-    resultsDict = json.loads(r.content)
-    print (resultsDict.keys())
+    results_dict = json.loads(r.content)
     # returns the access token
-    return resultsDict['access_token']
-    
+    return results_dict['access_token']
 
-def requestSet(setNum):
-    """Prepares the request for the Web API and checks the returned response.
-    If the response status code is 200, prints 'We got a response from the 
-    API!' and returns the content part of the response as a string. 
-    Otherwise, prints the status code, reason, and text of the response, 
-    returning None. 
-    """
-    baseURL = "https://api.quizlet.com/2.0/sets/" + setNum + "?client_id=sNtZu7YJaJ&whitespace=1"
-
-    httpResp = requests.get(baseURL)
-
-    # Print the URL, in case you want to copy it
-    # to run in the browser and explore the results there
-    print ('API URL Requested: ' + httpResp.url + '\n')
-
-    # Pass
-    if httpResp.status_code == 200:
-        print ("We got a response from the API!\n")
-        return httpResp.content
-    # Fail
-    else:
-        print (httpResp.status_code, httpResp.reason, httpResp.text)
         
-def writeJSONforExploration(jsonData, filename):
-    """Write results as JSON to explore them."""
-    with open(filename, 'w') as fw:
-        json.dump(jsonData, fw, sort_keys= True, indent=2)
-        
-def createSet(accessToken, title, terms, defs): #returns true is successful and false if not
+def create_set(access_token, title, terms, definitions):
+    """Returns true if set creation is successful and false if not"""
     url = "https://api.quizlet.com/2.0/sets"
     params = {
-	"title": title,
-	"terms[]": terms,
-	"definitions[]": defs,
-	"lang_terms" : "en",
-	"lang_definitions" : "en"}
-	
-    headers = {
-    "Authorization" : 'Bearer {}'.format(accessToken)
-    
-    }
-    httpResp = requests.post(url,params=params, headers=headers)
-    if httpResp.status_code == 201:
-        print ("Set was created!\n")
+        "title": title,
+        "terms[]": terms,
+        "definitions[]": definitions,
+        "lang_terms": TERM_LANGUAGE,
+        "lang_definitions": DEF_LANGUAGE
+        }
+    headers = {"Authorization": 'Bearer {}'.format(access_token)}
+    http_resp = requests.post(url, params=params, headers=headers)
+    if http_resp.status_code == 201:
+        print("Set was created!\n")
         return True
-        #return httpResp.content
-    # Fail
     else:
-        print (httpResp.status_code, httpResp.reason, httpResp.text)
+        print(http_resp.status_code, http_resp.reason, http_resp.text)
         return False
 
         
 def main():
-    #Get Authorization code
-    askAuth()
-    #get the  authorization code from URL
-    response = input("Redirected URL +1 decoy character?\n") #manually input the URL (figure out how to include on website later)
-    authCode = getAuth(response)
-    print(authCode)
-    
-    #Get access token to be used in all user-authenticated calls
-    token = requestToken(authCode)
-    # print(token)
-    
-    #Access token for Tuesday April 17 (use for testing)
-    #token = "XjwuryxHy4zrvwd7hpFj8JzcRHed9mkBkbztBYBp"
-    
+    ask_auth()
+
+    """Get the  authorization code from the returned URL, include a space or
+    other decoy character so that a web page is not opened
+    """
+    response = input("Redirected URL +1 decoy character?\n")
+    auth_code = get_auth(response)
+    token = get_token(auth_code)
     title = input("Title of set?\n")
+
+    """Use a VocabList Object to hold terms and definitions."""
     vocab = VocabList()
     terms = vocab.terms
-    defs = vocab.defs
+    definitions = vocab.defs
 
-    createSet(token, title, terms, defs)
-    
-    
+    create_set(token, title, terms, definitions)
+
     
 if __name__ == '__main__':
     main()
