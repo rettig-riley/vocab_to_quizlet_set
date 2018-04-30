@@ -103,7 +103,7 @@ def main():
     """Use a VocabList Object to hold terms and definitions."""
     vocab = VocabList()
     terms = vocab.terms
-    definitions = vocab.defs
+    definitions = vocab.definitions
 
     create_set(token, title, terms, definitions)
 
