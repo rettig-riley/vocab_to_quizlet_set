@@ -2,7 +2,7 @@
 Take two lists of the same size and use them to create a new flashcard deck on quizlet.com
 
 Packages not in Standard Python Library Used:
-requests
+requests,
 tkinter
 
 The quizlet.py file uses a VocabList object to obtain terms and definitions from the user to make a flashcard deck and can be run from the terminal.
